@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="VisaTracker">
+  <defs>
+    <linearGradient id="bg" x1="70" x2="442" y1="44" y2="468" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A1F71"/>
+      <stop offset="1" stop-color="#F7B600"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="132" y="96" width="248" height="320" rx="30" fill="#fff" opacity=".96"/>
+  <path d="M172 160h168M172 210h168M172 260h118" stroke="#1A1F71" stroke-width="24" stroke-linecap="round"/>
+  <circle cx="340" cy="340" r="54" fill="#F7B600"/>
+  <path d="m316 340 18 18 38-44" fill="none" stroke="#1A1F71" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
