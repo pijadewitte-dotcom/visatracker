@@ -1,0 +1,19 @@
+{
+  "name": "VisaTracker",
+  "short_name": "VisaTracker",
+  "description": "Uitgavenbeheer met document scanner en randdetectie",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F7F8FC",
+  "theme_color": "#1A1F71",
+  "orientation": "portrait",
+  "lang": "nl",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
