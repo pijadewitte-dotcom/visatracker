@@ -2,76 +2,18 @@ const STORAGE_KEY = "visa-photo-tracker-v2";
 
 const CATEGORY_PRESETS = [
   { id: "all", label: "Alles" },
-  { id: "fashion", label: "👜 Fashion" },
-  { id: "travel", label: "✈ Travel" },
-  { id: "interior", label: "🏠 Interior" },
-  { id: "food", label: "🍽 Food" },
-  { id: "beauty", label: "💄 Beauty" },
-  { id: "wellness", label: "🧘 Wellness" },
-  { id: "tech", label: "💻 Tech" },
-  { id: "sport", label: "🏃 Sport" },
-  { id: "architecture", label: "🏛 Architectuur" },
-  { id: "events", label: "🎤 Events" },
-  { id: "art", label: "🎨 Art" },
-  { id: "music", label: "🎵 Music" },
-  { id: "finance", label: "💼 Finance" },
-  { id: "education", label: "🎓 Education" },
-  { id: "auto", label: "🚗 Automotive" },
-  { id: "hospitality", label: "🏨 Hospitality" },
-  { id: "campaigns", label: "📣 Campaigns" },
+  { id: "parking", label: "🅿 Parkeren" },
+  { id: "fuel", label: "⛽ Brandstof" },
+  { id: "toll", label: "🛣 Tol" },
+  { id: "transport", label: "🚌 Openbaar vervoer" },
+  { id: "taxi", label: "🚕 Taxi" },
+  { id: "rental", label: "🚗 Huurwagen" },
+  { id: "food", label: "🍽 Eten" },
+  { id: "hotel", label: "🏨 Hotel" },
   { id: "other", label: "📦 Overige" }
 ];
 
-const SEED_ITEMS = [
-  {
-    id: crypto.randomUUID(),
-    title: "Editorial launch",
-    credit: "Studio North",
-    category: "fashion",
-    tags: ["lookbook", "homepage", "social"],
-    notes: "Sterk hero-beeld voor de nieuwste collectie.",
-    date: "2026-04-20",
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80",
-    cropMode: "portrait",
-    focusY: 34
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Ocean route",
-    credit: "Vista Works",
-    category: "travel",
-    tags: ["summer", "campaign"],
-    notes: "Bannerproof met veel ruimte voor copy.",
-    date: "2026-04-18",
-    image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
-    cropMode: "banner",
-    focusY: 48
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Quiet lobby",
-    credit: "Maison Line",
-    category: "hospitality",
-    tags: ["hotel", "brand"],
-    notes: "Net interieurbeeld voor listing of brochure.",
-    date: "2026-04-17",
-    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
-    cropMode: "square",
-    focusY: 45
-  },
-  {
-    id: crypto.randomUUID(),
-    title: "Investor dashboard",
-    credit: "Ledger Team",
-    category: "finance",
-    tags: ["report", "saas"],
-    notes: "Zakelijk beeld met sobere uitsnede.",
-    date: "2026-04-09",
-    image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=80",
-    cropMode: "square",
-    focusY: 44
-  }
-];
+const SEED_ITEMS = [];
 
 const cropRatios = {
   auto: "4 / 5",
@@ -121,6 +63,7 @@ const elements = {
   editNotes: document.getElementById("editNotes"),
   cancelEditButton: document.getElementById("cancelEditButton"),
   saveEditButton: document.getElementById("saveEditButton"),
+  closeFormSheetBtn: document.getElementById("closeFormSheetBtn"),
   toast: document.getElementById("toast")
 };
 
@@ -146,6 +89,7 @@ function bindEvents() {
   elements.exportButton.addEventListener("click", exportPhotos);
   elements.cancelEditButton.addEventListener("click", closeEdit);
   elements.saveEditButton.addEventListener("click", saveEdit);
+  elements.closeFormSheetBtn.addEventListener("click", closeFormSheet);
 
   elements.formSheet.addEventListener("click", (event) => {
     if (event.target === elements.formSheet) closeFormSheet();
@@ -213,7 +157,8 @@ async function handleFileUpload(event) {
     };
     openReview();
     setStatus("success", "✓ Preview klaar");
-  } catch {
+  } catch (err) {
+    console.error(err);
     setStatus("error", "Kon deze foto niet laden");
   } finally {
     elements.photoInput.value = "";
@@ -237,7 +182,8 @@ async function handleUrlPreview() {
     };
     openReview();
     setStatus("success", "✓ Preview klaar");
-  } catch {
+  } catch (err) {
+    console.error(err);
     setStatus("error", "Deze link kon niet als afbeelding geladen worden");
   }
 }
@@ -321,7 +267,8 @@ async function savePhoto() {
         focusY: defaultFocus(cropMode)
       };
       image = state.pending.image;
-    } catch {
+    } catch (err) {
+      console.error(err);
       showToast("De link kon niet geladen worden");
       return;
     }
@@ -551,163 +498,11 @@ function showToast(message) {
   }, 2200);
 }
 
-/**
- * Enhanced edge detection that works on light backgrounds
- * Uses Sobel edge detection + adaptive thresholding
- */
-async function detectDocumentEdges(imageSource) {
-  const image = await loadImage(imageSource);
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
-  
-  // Draw image and get pixel data
-  ctx.drawImage(image, 0, 0);
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
-  
-  // Convert to grayscale
-  const gray = new Uint8Array(canvas.width * canvas.height);
-  for (let i = 0; i < data.length; i += 4) {
-    gray[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-  }
-  
-  // Apply Sobel edge detection
-  const edges = sobelEdgeDetection(gray, canvas.width, canvas.height);
-  
-  // Adaptive thresholding for better light background handling
-  const threshold = calculateAdaptiveThreshold(edges);
-  const binary = new Uint8Array(edges.length);
-  for (let i = 0; i < edges.length; i++) {
-    binary[i] = edges[i] > threshold ? 255 : 0;
-  }
-  
-  // Find contours and detect document corners
-  const corners = detectCorners(binary, canvas.width, canvas.height);
-  
-  return {
-    corners,
-    confidence: calculateConfidence(corners, canvas.width, canvas.height)
-  };
-}
-
-/**
- * Sobel edge detection operator
- */
-function sobelEdgeDetection(gray, width, height) {
-  const edges = new Uint8Array(width * height);
-  
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const idx = y * width + x;
-      
-      // Sobel X kernel
-      const gx = 
-        -gray[(y - 1) * width + (x - 1)] - 2 * gray[y * width + (x - 1)] - gray[(y + 1) * width + (x - 1)] +
-        gray[(y - 1) * width + (x + 1)] + 2 * gray[y * width + (x + 1)] + gray[(y + 1) * width + (x + 1)];
-      
-      // Sobel Y kernel
-      const gy =
-        -gray[(y - 1) * width + (x - 1)] - 2 * gray[(y - 1) * width + x] - gray[(y - 1) * width + (x + 1)] +
-        gray[(y + 1) * width + (x - 1)] + 2 * gray[(y + 1) * width + x] + gray[(y + 1) * width + (x + 1)];
-      
-      edges[idx] = Math.sqrt(gx * gx + gy * gy);
-    }
-  }
-  
-  return edges;
-}
-
-/**
- * Adaptive threshold for better results on varying backgrounds
- */
-function calculateAdaptiveThreshold(edges) {
-  const sorted = Array.from(edges).sort((a, b) => a - b);
-  const q75 = sorted[Math.floor(sorted.length * 0.75)];
-  const q90 = sorted[Math.floor(sorted.length * 0.90)];
-  return (q75 + q90) / 2;
-}
-
-/**
- * Detect corner points from binary edge image
- */
-function detectCorners(binary, width, height) {
-  const corners = [];
-  
-  // Sample corners from edges (top-left, top-right, bottom-right, bottom-left)
-  const margin = Math.min(width, height) * 0.15;
-  const sampleRegions = [
-    { x: [0, margin], y: [0, margin], name: "top-left" },
-    { x: [width - margin, width], y: [0, margin], name: "top-right" },
-    { x: [width - margin, width], y: [height - margin, height], name: "bottom-right" },
-    { x: [0, margin], y: [height - margin, height], name: "bottom-left" }
-  ];
-  
-  for (const region of sampleRegions) {
-    let maxEdge = 0;
-    let bestPoint = null;
-    
-    for (let y = Math.floor(region.y[0]); y < region.y[1]; y++) {
-      for (let x = Math.floor(region.x[0]); x < region.x[1]; x++) {
-        const idx = y * width + x;
-        if (binary[idx] > maxEdge) {
-          maxEdge = binary[idx];
-          bestPoint = { x, y };
-        }
-      }
-    }
-    
-    if (bestPoint) corners.push(bestPoint);
-  }
-  
-  return corners.length === 4 ? corners : null;
-}
-
-/**
- * Calculate detection confidence based on corner positions
- */
-function calculateConfidence(corners, width, height) {
-  if (!corners || corners.length !== 4) return 0;
-  
-  // Check if corners form a reasonable quadrilateral
-  const distances = [];
-  for (let i = 0; i < 4; i++) {
-    const dx = corners[(i + 1) % 4].x - corners[i].x;
-    const dy = corners[(i + 1) % 4].y - corners[i].y;
-    distances.push(Math.sqrt(dx * dx + dy * dy));
-  }
-  
-  const avgDistance = distances.reduce((a, b) => a + b) / 4;
-  const variance = distances.reduce((sum, d) => sum + Math.pow(d - avgDistance, 2), 0) / 4;
-  
-  // Higher confidence if sides are similar length (less variance)
-  return Math.max(0, 1 - (Math.sqrt(variance) / avgDistance) * 0.5);
-}
-
 async function detectCropMode(source) {
   const image = await loadImage(source);
   const ratio = image.naturalWidth / image.naturalHeight;
-  
-  // Try to detect document edges first (only if image is reasonably large)
-  if (image.naturalWidth > 400 && image.naturalHeight > 400) {
-    try {
-      const edgeData = await detectDocumentEdges(source);
-      if (edgeData.corners && edgeData.confidence > 0.3) {
-        // Document detected with good confidence
-        // Use natural aspect ratio for better results
-        if (ratio >= 1.35) return "banner";
-        if (ratio <= 0.88) return "portrait";
-        return "square";
-      }
-    } catch (e) {
-      // Edge detection failed, fall back to ratio-based detection
-      console.debug("Edge detection failed, using ratio fallback");
-    }
-  }
-  
-  // Ratio-based fallback
+
+  // Ratio-based detection
   if (ratio >= 1.35) return "banner";
   if (ratio <= 0.88) return "portrait";
   return "square";
@@ -779,7 +574,8 @@ function loadState() {
       photos: Array.isArray(parsed.photos) ? parsed.photos : fallback.photos,
       pending: fallback.pending
     };
-  } catch {
+  } catch (err) {
+    console.error(err);
     return fallback;
   }
 }
