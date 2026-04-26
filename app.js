@@ -551,9 +551,163 @@ function showToast(message) {
   }, 2200);
 }
 
+/**
+ * Enhanced edge detection that works on light backgrounds
+ * Uses Sobel edge detection + adaptive thresholding
+ */
+async function detectDocumentEdges(imageSource) {
+  const image = await loadImage(imageSource);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  
+  // Draw image and get pixel data
+  ctx.drawImage(image, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  
+  // Convert to grayscale
+  const gray = new Uint8Array(canvas.width * canvas.height);
+  for (let i = 0; i < data.length; i += 4) {
+    gray[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  }
+  
+  // Apply Sobel edge detection
+  const edges = sobelEdgeDetection(gray, canvas.width, canvas.height);
+  
+  // Adaptive thresholding for better light background handling
+  const threshold = calculateAdaptiveThreshold(edges);
+  const binary = new Uint8Array(edges.length);
+  for (let i = 0; i < edges.length; i++) {
+    binary[i] = edges[i] > threshold ? 255 : 0;
+  }
+  
+  // Find contours and detect document corners
+  const corners = detectCorners(binary, canvas.width, canvas.height);
+  
+  return {
+    corners,
+    confidence: calculateConfidence(corners, canvas.width, canvas.height)
+  };
+}
+
+/**
+ * Sobel edge detection operator
+ */
+function sobelEdgeDetection(gray, width, height) {
+  const edges = new Uint8Array(width * height);
+  
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idx = y * width + x;
+      
+      // Sobel X kernel
+      const gx = 
+        -gray[(y - 1) * width + (x - 1)] - 2 * gray[y * width + (x - 1)] - gray[(y + 1) * width + (x - 1)] +
+        gray[(y - 1) * width + (x + 1)] + 2 * gray[y * width + (x + 1)] + gray[(y + 1) * width + (x + 1)];
+      
+      // Sobel Y kernel
+      const gy =
+        -gray[(y - 1) * width + (x - 1)] - 2 * gray[(y - 1) * width + x] - gray[(y - 1) * width + (x + 1)] +
+        gray[(y + 1) * width + (x - 1)] + 2 * gray[(y + 1) * width + x] + gray[(y + 1) * width + (x + 1)];
+      
+      edges[idx] = Math.sqrt(gx * gx + gy * gy);
+    }
+  }
+  
+  return edges;
+}
+
+/**
+ * Adaptive threshold for better results on varying backgrounds
+ */
+function calculateAdaptiveThreshold(edges) {
+  const sorted = Array.from(edges).sort((a, b) => a - b);
+  const q75 = sorted[Math.floor(sorted.length * 0.75)];
+  const q90 = sorted[Math.floor(sorted.length * 0.90)];
+  return (q75 + q90) / 2;
+}
+
+/**
+ * Detect corner points from binary edge image
+ */
+function detectCorners(binary, width, height) {
+  const corners = [];
+  
+  // Sample corners from edges (top-left, top-right, bottom-right, bottom-left)
+  const margin = Math.min(width, height) * 0.15;
+  const sampleRegions = [
+    { x: [0, margin], y: [0, margin], name: "top-left" },
+    { x: [width - margin, width], y: [0, margin], name: "top-right" },
+    { x: [width - margin, width], y: [height - margin, height], name: "bottom-right" },
+    { x: [0, margin], y: [height - margin, height], name: "bottom-left" }
+  ];
+  
+  for (const region of sampleRegions) {
+    let maxEdge = 0;
+    let bestPoint = null;
+    
+    for (let y = Math.floor(region.y[0]); y < region.y[1]; y++) {
+      for (let x = Math.floor(region.x[0]); x < region.x[1]; x++) {
+        const idx = y * width + x;
+        if (binary[idx] > maxEdge) {
+          maxEdge = binary[idx];
+          bestPoint = { x, y };
+        }
+      }
+    }
+    
+    if (bestPoint) corners.push(bestPoint);
+  }
+  
+  return corners.length === 4 ? corners : null;
+}
+
+/**
+ * Calculate detection confidence based on corner positions
+ */
+function calculateConfidence(corners, width, height) {
+  if (!corners || corners.length !== 4) return 0;
+  
+  // Check if corners form a reasonable quadrilateral
+  const distances = [];
+  for (let i = 0; i < 4; i++) {
+    const dx = corners[(i + 1) % 4].x - corners[i].x;
+    const dy = corners[(i + 1) % 4].y - corners[i].y;
+    distances.push(Math.sqrt(dx * dx + dy * dy));
+  }
+  
+  const avgDistance = distances.reduce((a, b) => a + b) / 4;
+  const variance = distances.reduce((sum, d) => sum + Math.pow(d - avgDistance, 2), 0) / 4;
+  
+  // Higher confidence if sides are similar length (less variance)
+  return Math.max(0, 1 - (Math.sqrt(variance) / avgDistance) * 0.5);
+}
+
 async function detectCropMode(source) {
   const image = await loadImage(source);
   const ratio = image.naturalWidth / image.naturalHeight;
+  
+  // Try to detect document edges first (only if image is reasonably large)
+  if (image.naturalWidth > 400 && image.naturalHeight > 400) {
+    try {
+      const edgeData = await detectDocumentEdges(source);
+      if (edgeData.corners && edgeData.confidence > 0.3) {
+        // Document detected with good confidence
+        // Use natural aspect ratio for better results
+        if (ratio >= 1.35) return "banner";
+        if (ratio <= 0.88) return "portrait";
+        return "square";
+      }
+    } catch (e) {
+      // Edge detection failed, fall back to ratio-based detection
+      console.debug("Edge detection failed, using ratio fallback");
+    }
+  }
+  
+  // Ratio-based fallback
   if (ratio >= 1.35) return "banner";
   if (ratio <= 0.88) return "portrait";
   return "square";
@@ -576,6 +730,7 @@ function loadImage(source) {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = reject;
+    image.crossOrigin = "anonymous";
     image.src = source;
   });
 }
