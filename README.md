@@ -1,19 +1,23 @@
 # VisaTracker 2.0
 
-VisaTracker is een mobiele webapp voor uitgavenbeheer met documentfoto's.
+VisaTracker is een zelfstandige GitHub Pages webapp voor uitgavenbeheer met documentfoto's.
 
-Live app: https://uitgavenbeheer.netlify.app/?v=5
+## GitHub Pages
 
-## Laatste versie
+Open de app via:
 
-Deze repository verwijst naar de live v5-app met:
+https://pijadewitte-dotcom.github.io/visatracker/
 
-- automatische randdetectie bij camera-opnames
+Als de link nog niet werkt, zet GitHub Pages aan in de repo via **Settings > Pages > Deploy from a branch > main > /root**.
+
+## Functies
+
+- draait rechtstreeks vanuit GitHub, zonder Netlify-doorsturing
+- camera-opname van bonnetjes en facturen
+- automatische randdetectie
 - controlevenster met vier hoekbolletjes
 - handmatig bijwerken van de crop
-- bevestigen en rechtzetten van bonnetjes/facturen
-- extra categorieen zoals Parking, Tol, Brandstof en Openbaar vervoer
-
-## GitHub entrypoint
-
-`index.html` stuurt door naar de live VisaTracker 2.0-app.
+- bevestigen en rechtzetten van het document
+- extra categorieen zoals Parking, Brandstof, Tol, Openbaar vervoer, Taxi en Huurwagen
+- lokale opslag in de browser
+- PDF-export
