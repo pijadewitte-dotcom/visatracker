@@ -19,18 +19,30 @@ function visaMoney(value) {
 function addReceiptImage(doc, image) {
   if (!image) return;
   try {
-    const boxX = 38.0;
+    const boxX = 10.0;
     const boxY = 45.0;
-    const boxW = 134.0;
-    const boxH = 238.0;
+    const boxW = 190.0;
+    const boxH = 236.0;
     const props = doc.getImageProperties(image);
-    const scale = Math.min(boxW / props.width, boxH / props.height);
-    const drawW = props.width * scale;
-    const drawH = props.height * scale;
+    const type = image.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    const portrait = props.height >= props.width;
+
+    if (portrait) {
+      const scale = Math.min(boxW / props.width, boxH / props.height);
+      const drawW = props.width * scale;
+      const drawH = props.height * scale;
+      const drawX = boxX + (boxW - drawW) / 2;
+      const drawY = boxY + (boxH - drawH) / 2;
+      doc.addImage(image, type, drawX, drawY, drawW, drawH);
+      return;
+    }
+
+    const scale = Math.min(boxW / props.height, boxH / props.width);
+    const drawW = props.height * scale;
+    const drawH = props.width * scale;
     const drawX = boxX + (boxW - drawW) / 2;
     const drawY = boxY + (boxH - drawH) / 2;
-    const type = image.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-    doc.addImage(image, type, drawX, drawY, drawW, drawH);
+    doc.addImage(image, type, drawX, drawY, drawW, drawH, undefined, 'FAST', 90);
   } catch {
   }
 }
