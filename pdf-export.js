@@ -19,10 +19,10 @@ function visaMoney(value) {
 function addReceiptImage(doc, image) {
   if (!image) return;
   try {
-    const boxX = 53.67;
-    const boxY = 53.0;
-    const boxW = 102.66;
-    const boxH = 234.0;
+    const boxX = 38.0;
+    const boxY = 45.0;
+    const boxW = 134.0;
+    const boxH = 238.0;
     const props = doc.getImageProperties(image);
     const scale = Math.min(boxW / props.width, boxH / props.height);
     const drawW = props.width * scale;
