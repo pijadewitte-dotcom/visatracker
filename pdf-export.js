@@ -19,23 +19,19 @@ function visaMoney(value) {
 function addReceiptImage(doc, image) {
   if (!image) return;
   try {
-    const pageW = 210;
-    const imageX = 53.67;
-    const imageY = 53.0;
-    const imageW = 102.66;
-    const maxH = 234.0;
+    const boxX = 53.67;
+    const boxY = 53.0;
+    const boxW = 102.66;
+    const boxH = 234.0;
     const props = doc.getImageProperties(image);
-    let imageH = imageW * props.height / props.width;
-    let drawW = imageW;
-    if (imageH > maxH) {
-      imageH = maxH;
-      drawW = imageH * props.width / props.height;
-    }
-    const drawX = imageX + (imageW - drawW) / 2;
+    const scale = Math.min(boxW / props.width, boxH / props.height);
+    const drawW = props.width * scale;
+    const drawH = props.height * scale;
+    const drawX = boxX + (boxW - drawW) / 2;
+    const drawY = boxY + (boxH - drawH) / 2;
     const type = image.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-    doc.addImage(image, type, drawX, imageY, drawW, imageH);
+    doc.addImage(image, type, drawX, drawY, drawW, drawH);
   } catch {
-    // Keep the PDF export working even when a browser cannot decode an older image.
   }
 }
 
@@ -44,13 +40,14 @@ function drawVisaPage(doc, row, pageIndex, pageCount) {
   const pale = [180, 185, 220];
   const ink = [26, 23, 20];
   const footer = [180, 175, 168];
+  const white = [255, 255, 255];
 
   doc.setFillColor(...navy);
   doc.rect(0, 0, 210, 22, 'F');
 
   doc.setFont('helvetica', 'bolditalic');
   doc.setFontSize(10);
-  doc.setTextColor(...navy);
+  doc.setTextColor(...white);
   doc.text('VISA', 18.9, 13.5);
 
   doc.setFont('helvetica', 'normal');
@@ -66,6 +63,10 @@ function drawVisaPage(doc, row, pageIndex, pageCount) {
   doc.text('BESCHRIJVING', 110.0, 30.0);
   doc.text('BEDRAG', 183.8, 30.0);
 
+  doc.setDrawColor(...navy);
+  doc.setLineWidth(0.45);
+  doc.line(14.0, 32.2, 196.0, 32.2);
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
   doc.setTextColor(...ink);
@@ -78,8 +79,6 @@ function drawVisaPage(doc, row, pageIndex, pageCount) {
   doc.setTextColor(...navy);
   doc.text(visaMoney(row.amount), 182.0, 37.0);
 
-  doc.setDrawColor(...navy);
-  doc.setLineWidth(0.35);
   addReceiptImage(doc, row.img || row.image);
 
   doc.setFont('helvetica', 'normal');
