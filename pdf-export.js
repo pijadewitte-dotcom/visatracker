@@ -13,54 +13,79 @@ function visaFmtDate(value) {
 }
 
 function visaMoney(value) {
-  const amount = Number(value || 0).toFixed(2);
-  return `€${amount}`;
+  return `€${Number(value || 0).toFixed(2)}`;
 }
 
-function visaText(doc, text, x, y, opts) {
-  doc.text(String(text || ''), x, y, opts || {});
-}
-
-function drawVisaPage(doc, rows, pageIndex, pageCount, start, end) {
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const left = 12;
-  const top = 12;
-  const colDate = 12;
-  const colCat = 47;
-  const colDesc = 91;
-  const colAmount = pageW - 13;
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(12);
-  visaText(doc, 'VISA', left, top);
-  visaText(doc, `${pageIndex} / ${pageCount}`, pageW - 12, top, { align: 'right' });
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  const headerY = 28;
-  visaText(doc, 'DATUM', colDate, headerY);
-  visaText(doc, 'CATEGORIE', colCat, headerY);
-  visaText(doc, 'BESCHRIJVING', colDesc, headerY);
-  visaText(doc, 'BEDRAG', colAmount, headerY, { align: 'right' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  let y = 38;
-  for (let i = start; i < end; i += 1) {
-    const row = rows[i];
-    const desc = String(row.desc || row.title || '').slice(0, 42);
-    const cat = String(row.cat || row.category || 'Overige').slice(0, 22);
-    visaText(doc, visaFmtDate(row.date), colDate, y);
-    visaText(doc, cat, colCat, y);
-    visaText(doc, desc, colDesc, y);
-    visaText(doc, visaMoney(row.amount), colAmount, y, { align: 'right' });
-    y += 8;
+function addReceiptImage(doc, image) {
+  if (!image) return;
+  try {
+    const pageW = 210;
+    const imageX = 53.67;
+    const imageY = 53.0;
+    const imageW = 102.66;
+    const maxH = 234.0;
+    const props = doc.getImageProperties(image);
+    let imageH = imageW * props.height / props.width;
+    let drawW = imageW;
+    if (imageH > maxH) {
+      imageH = maxH;
+      drawW = imageH * props.width / props.height;
+    }
+    const drawX = imageX + (imageW - drawW) / 2;
+    const type = image.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+    doc.addImage(image, type, drawX, imageY, drawW, imageH);
+  } catch {
+    // Keep the PDF export working even when a browser cannot decode an older image.
   }
+}
 
+function drawVisaPage(doc, row, pageIndex, pageCount) {
+  const navy = [26, 31, 113];
+  const pale = [180, 185, 220];
+  const ink = [26, 23, 20];
+  const footer = [180, 175, 168];
+
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, 210, 22, 'F');
+
+  doc.setFont('helvetica', 'bolditalic');
   doc.setFontSize(10);
+  doc.setTextColor(...navy);
+  doc.text('VISA', 18.9, 13.5);
+
   doc.setFont('helvetica', 'normal');
-  visaText(doc, 'Visa Expense Tracker', left, pageH - 12);
+  doc.setFontSize(8);
+  doc.setTextColor(...pale);
+  doc.text(`${pageIndex} / ${pageCount}`, 190.5, 13.0, { align: 'right' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...navy);
+  doc.text('DATUM', 14.0, 30.0);
+  doc.text('CATEGORIE', 56.0, 30.0);
+  doc.text('BESCHRIJVING', 110.0, 30.0);
+  doc.text('BEDRAG', 183.8, 30.0);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor(...ink);
+  doc.text(visaFmtDate(row.date), 14.0, 37.0);
+  doc.text(String(row.cat || row.category || 'Overige').slice(0, 22), 56.0, 37.0);
+  doc.text(String(row.desc || row.title || '').slice(0, 34), 110.0, 37.0);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...navy);
+  doc.text(visaMoney(row.amount), 182.0, 37.0);
+
+  doc.setDrawColor(...navy);
+  doc.setLineWidth(0.35);
+  addReceiptImage(doc, row.img || row.image);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...footer);
+  doc.text('Visa Expense Tracker', 93.0, 291.0);
 }
 
 function exportPdf() {
@@ -71,12 +96,11 @@ function exportPdf() {
   }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const rowsPerPage = 30;
-  const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
-  for (let page = 0; page < pageCount; page += 1) {
-    if (page > 0) doc.addPage();
-    drawVisaPage(doc, rows, page + 1, pageCount, page * rowsPerPage, Math.min(rows.length, (page + 1) * rowsPerPage));
-  }
+  const pageCount = rows.length;
+  rows.forEach((row, index) => {
+    if (index > 0) doc.addPage();
+    drawVisaPage(doc, row, index + 1, pageCount);
+  });
   doc.save(`visa-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
