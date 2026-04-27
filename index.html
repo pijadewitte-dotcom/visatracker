@@ -1,24 +1,208 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>VisaTracker</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=5">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <title>Visa Photo Tracker</title>
   <meta name="theme-color" content="#1A1F71">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <div class="app">
-    <header class="top"><div class="brand"><div class="logo"><span>V</span>ISA</div><div><h1>VisaTracker</h1><div class="sub">Uitgavenbeheer</div></div></div><button class="btn" id="exportBtn">PDF</button></header>
-    <main class="main"><button class="scan-big" id="scanBtn"><b>Document scannen</b><small>Zoekt automatisch de hoeken, cropt en zet recht</small></button><div class="actions"><button class="tile" id="photoBtn">Foto uploaden</button><button class="tile" id="pdfBtn">PDF uploaden</button></div><input id="photoInput" type="file" accept="image/*" hidden><div class="summary"><strong>Uitgaven</strong><span class="pill">Totaal: <b id="total">EUR 0.00</b></span></div><div id="list" class="empty">Nog geen uitgaven</div></main>
+  <div class="screen active" id="homeScreen">
+    <div class="app-header">
+      <div class="logo">
+        <div class="visa-chip"><span>V</span>ISA</div>
+        <div>
+          <h1>Photo Tracker</h1>
+          <p>Auto Crop Gallery</p>
+        </div>
+      </div>
+      <button class="header-btn" type="button" id="exportButton">⬇ Export</button>
+    </div>
+
+    <div class="home-content">
+      <button class="scan-hero" type="button" id="heroUploadButton">
+        <span class="scan-hero-icon">🖼</span>
+        <h2>Foto toevoegen</h2>
+        <p>Upload een beeld of laad er een via link</p>
+        <span class="scan-hero-badge">✦ Auto crop kiest direct de beste uitsnede</span>
+      </button>
+
+      <div class="quick-actions">
+        <button class="quick-btn" type="button" id="photoUploadButton">
+          <div class="qb-icon">📷</div>
+          <span class="qb-label">Foto uploaden</span>
+          <span class="qb-sub">Uit je bibliotheek</span>
+        </button>
+        <button class="quick-btn" type="button" id="openSheetButton">
+          <div class="qb-icon">🔗</div>
+          <span class="qb-label">Link invoeren</span>
+          <span class="qb-sub">Preview en opslaan</span>
+        </button>
+      </div>
+
+      <input type="file" id="photoInput" accept="image/*" hidden>
+
+      <div class="category-strip" id="categoryStrip"></div>
+
+      <div class="section-header">
+        <span class="section-title">Fotocollectie</span>
+        <div class="total-pill">Totaal: <span id="totalDisplay">0</span></div>
+      </div>
+
+      <div id="expenseList"></div>
+    </div>
   </div>
-  <section id="scanner" class="scanner"><div class="scan-head"><b>Document scannen</b><button class="close" id="closeCamBtn">x</button></div><video id="video" autoplay muted playsinline></video><div class="frame"></div><div id="strip" class="strip"></div><div class="scan-foot"><span><b id="count">0</b> foto's</span><button class="shutter" id="shootBtn"></button><button id="doneBtn" class="btn done">Klaar</button></div></section>
-  <section id="review" class="review"><div class="review-top"><button id="reviewBackBtn">Terug</button><b>Hoeken controleren</b><span></span></div><div id="stage" class="stage"><canvas id="canvas"></canvas><svg id="overlay"><polygon id="poly" fill="rgba(247,182,0,.16)" stroke="#F7B600" stroke-width="2"></polygon><circle id="h0" class="handle" r="17"></circle><circle id="h1" class="handle" r="17"></circle><circle id="h2" class="handle" r="17"></circle><circle id="h3" class="handle" r="17"></circle></svg></div><div class="tools"><button id="rotateBtn">Draai</button><button id="redetectBtn">Zoek opnieuw</button><button id="enhanceBtn">Scherp</button><button class="accept" id="acceptBtn">Bevestigen</button></div></section>
-  <section id="sheet" class="sheet"><div class="panel"><div class="bar"></div><h2>Nieuwe uitgave</h2><img id="preview" class="preview"><div class="grid"><div class="field"><label>Datum</label><input id="date" type="date"></div><div class="field"><label>Bedrag</label><input id="amount" type="number" step="0.01" placeholder="0.00"></div></div><div class="field"><label>Beschrijving</label><input id="desc" placeholder="bv. Parking luchthaven"></div><div class="field"><label>Categorie</label><select id="cat"></select></div><div class="field"><label>Notities</label><textarea id="notes"></textarea></div><button class="save" id="saveBtn">Toevoegen</button></div></section>
-  <div id="toast" class="toast"></div><canvas id="work" hidden></canvas>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="app.js?v=3"></script>
-  <script src="pdf-export.js?v=2"></script>
+
+  <div class="screen" id="reviewScreen">
+    <div class="review-header">
+      <button class="review-back" type="button" id="reviewBackButton">← Terug</button>
+      <h2>Bijsnijden & kiezen</h2>
+      <span class="review-spacer"></span>
+    </div>
+
+    <div class="review-canvas-wrap" id="reviewWrap">
+      <div class="review-frame" id="reviewFrame">
+        <img id="reviewImage" alt="Preview van geselecteerde foto">
+      </div>
+    </div>
+
+    <div class="review-tools">
+      <button class="tool-btn active-filter" type="button" data-crop-mode="auto">
+        <span class="ti">✦</span>
+        <span class="tl">Auto</span>
+      </button>
+      <button class="tool-btn" type="button" data-crop-mode="square">
+        <span class="ti">□</span>
+        <span class="tl">Square</span>
+      </button>
+      <button class="tool-btn" type="button" data-crop-mode="portrait">
+        <span class="ti">▮</span>
+        <span class="tl">Portrait</span>
+      </button>
+      <button class="tool-btn" type="button" data-crop-mode="banner">
+        <span class="ti">▭</span>
+        <span class="tl">Banner</span>
+      </button>
+      <button class="use-btn" type="button" id="acceptReviewButton">Gebruik foto</button>
+    </div>
+  </div>
+
+  <div id="formSheet">
+    <div class="form-panel">
+      <div class="form-handle"></div>
+      <div class="form-title">Nieuwe foto</div>
+      <img id="formPreview" class="form-preview" alt="Preview van toe te voegen foto" hidden>
+
+      <div class="form-fields">
+        <div class="ai-status" id="aiStatus">
+          <div class="spinner" id="aiSpinner"></div>
+          <span id="aiStatusText"></span>
+        </div>
+
+        <div class="two-col">
+          <div class="field">
+            <div class="flabel-row">
+              <label for="photoDate">Datum</label>
+              <span class="ai-tag" id="dateTag">AUTO</span>
+            </div>
+            <input type="date" id="photoDate">
+          </div>
+          <div class="field">
+            <div class="flabel-row">
+              <label for="photoTitle">Titel</label>
+              <span class="ai-tag" id="cropTag">CROP</span>
+            </div>
+            <input type="text" id="photoTitle" maxlength="60" placeholder="Bijvoorbeeld: Hero editorial">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="photoCredit">Bron of maker</label>
+          <input type="text" id="photoCredit" maxlength="60" placeholder="Studio, fotograaf of klant">
+        </div>
+
+        <div class="field">
+          <div class="flabel-row">
+            <label for="photoUrl">Afbeeldingslink</label>
+            <button class="ghost-inline-btn" type="button" id="previewUrlButton">Preview laden</button>
+          </div>
+          <input type="url" id="photoUrl" placeholder="https://voorbeeld.be/foto.jpg">
+        </div>
+
+        <div class="field">
+          <label for="photoCategory">Categorie</label>
+          <select id="photoCategory"></select>
+        </div>
+
+        <div class="field">
+          <label for="customCategory">Extra categorie</label>
+          <input type="text" id="customCategory" maxlength="32" placeholder="Bijvoorbeeld: Campagnes">
+        </div>
+
+        <div class="field">
+          <label for="photoTags">Tags</label>
+          <input type="text" id="photoTags" maxlength="120" placeholder="lookbook, social, homepage">
+        </div>
+
+        <div class="field">
+          <label for="photoNotes">Notities</label>
+          <textarea id="photoNotes" placeholder="Korte context of gebruik"></textarea>
+        </div>
+
+        <button class="add-btn" type="button" id="savePhotoButton">+ Toevoegen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="editModal">
+    <div class="edit-panel">
+      <div class="form-handle"></div>
+      <h2>Bewerken</h2>
+
+      <div class="two-col">
+        <div class="field">
+          <label for="editDate">Datum</label>
+          <input type="date" id="editDate">
+        </div>
+        <div class="field">
+          <label for="editTitle">Titel</label>
+          <input type="text" id="editTitle" maxlength="60">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="editCredit">Bron of maker</label>
+        <input type="text" id="editCredit" maxlength="60">
+      </div>
+
+      <div class="field">
+        <label for="editCategory">Categorie</label>
+        <select id="editCategory"></select>
+      </div>
+
+      <div class="field">
+        <label for="editTags">Tags</label>
+        <input type="text" id="editTags" maxlength="120">
+      </div>
+
+      <div class="field">
+        <label for="editNotes">Notities</label>
+        <textarea id="editNotes"></textarea>
+      </div>
+
+      <div class="edit-actions">
+        <button class="cancel-btn" type="button" id="cancelEditButton">Annuleren</button>
+        <button class="save-btn" type="button" id="saveEditButton">Opslaan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
