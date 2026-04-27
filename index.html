@@ -5,22 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <title>VisaTracker</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
   <meta name="theme-color" content="#1A1F71">
 </head>
 <body>
   <div class="app">
-    <header class="top">
-      <div class="brand"><div class="logo"><span>V</span>ISA</div><div><h1>VisaTracker</h1><div class="sub">Uitgavenbeheer</div></div></div>
-      <button class="btn" id="exportBtn">PDF</button>
-    </header>
-    <main class="main">
-      <button class="scan-big" id="scanBtn"><b>Document scannen</b><small>Zoekt automatisch de hoeken, cropt en zet recht</small></button>
-      <div class="actions"><button class="tile" id="photoBtn">Foto uploaden</button><button class="tile" id="pdfBtn">PDF uploaden</button></div>
-      <input id="photoInput" type="file" accept="image/*" hidden>
-      <div class="summary"><strong>Uitgaven</strong><span class="pill">Totaal: <b id="total">EUR 0.00</b></span></div>
-      <div id="list" class="empty">Nog geen uitgaven</div>
-    </main>
+    <header class="top"><div class="brand"><div class="logo"><span>V</span>ISA</div><div><h1>VisaTracker</h1><div class="sub">Uitgavenbeheer</div></div></div><button class="btn" id="exportBtn">PDF</button></header>
+    <main class="main"><button class="scan-big" id="scanBtn"><b>Document scannen</b><small>Zoekt automatisch de hoeken, cropt en zet recht</small></button><div class="actions"><button class="tile" id="photoBtn">Foto uploaden</button><button class="tile" id="pdfBtn">PDF uploaden</button></div><input id="photoInput" type="file" accept="image/*" hidden><div class="summary"><strong>Uitgaven</strong><span class="pill">Totaal: <b id="total">EUR 0.00</b></span></div><div id="list" class="empty">Nog geen uitgaven</div></main>
   </div>
   <section id="scanner" class="scanner"><div class="scan-head"><b>Document scannen</b><button class="close" id="closeCamBtn">x</button></div><video id="video" autoplay muted playsinline></video><div class="frame"></div><div id="strip" class="strip"></div><div class="scan-foot"><span><b id="count">0</b> foto's</span><button class="shutter" id="shootBtn"></button><button id="doneBtn" class="btn done">Klaar</button></div></section>
   <section id="review" class="review"><div class="review-top"><button id="reviewBackBtn">Terug</button><b>Hoeken controleren</b><span></span></div><div id="stage" class="stage"><canvas id="canvas"></canvas><svg id="overlay"><polygon id="poly" fill="rgba(247,182,0,.16)" stroke="#F7B600" stroke-width="2"></polygon><circle id="h0" class="handle" r="17"></circle><circle id="h1" class="handle" r="17"></circle><circle id="h2" class="handle" r="17"></circle><circle id="h3" class="handle" r="17"></circle></svg></div><div class="tools"><button id="rotateBtn">Draai</button><button id="redetectBtn">Zoek opnieuw</button><button id="enhanceBtn">Scherp</button><button class="accept" id="acceptBtn">Bevestigen</button></div></section>
@@ -28,5 +19,6 @@
   <div id="toast" class="toast"></div><canvas id="work" hidden></canvas>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="app.js?v=3"></script>
+  <script src="pdf-export.js?v=1"></script>
 </body>
 </html>
